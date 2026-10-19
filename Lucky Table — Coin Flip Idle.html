@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lucky Table — Coin Flip Idle</title>
+<style>
+:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#06100c;--bg2:#0f2a1e;--panel:#0f1a15;--panel2:#15251d;--well:#08110d;--line:#27402f;--text:#e9f2e6;--dim:#88a592;--ore:#ffcc33;--cry:#ff7a7a;--pla:#6ee7ff;--dm:#ffd24d;--ok:#5dffa0;--head:#0a140f;--toast:#16301f;--dmbg:#2a2208}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,var(--bg2),var(--bg) 65%) fixed;background-color:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Roboto,sans-serif;min-height:100vh}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--head);z-index:10}
+header{padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--line);background:var(--head);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+h1{margin:0;font-size:1.2rem;letter-spacing:.12em;text-transform:uppercase;text-shadow:0 0 14px #ffcc3366}
+h1 span{color:var(--ore)}
+.tools button{background:var(--panel2);color:var(--dim);border:1px solid var(--line);padding:6px 12px;border-radius:8px;cursor:pointer;margin-left:6px}
+.tools button:hover{color:var(--text)}
+main{max-width:1150px;margin:0 auto;padding:18px;display:grid;grid-template-columns:1fr 1.15fr;gap:18px}
+@media(max-width:820px){main{grid-template-columns:1fr}}
+.card{background:linear-gradient(180deg,#132219,var(--panel));border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:18px;box-shadow:0 8px 30px #0006}
+.scene{max-width:1114px;width:calc(100% - 36px);margin:18px auto 0;padding:12px}
+#scene{width:100%;height:auto;image-rendering:pixelated;border-radius:8px;display:block;border:1px solid var(--line)}
+.card h2{margin:0 0 12px;font-size:.85rem;text-transform:uppercase;letter-spacing:.14em;color:var(--dim)}
+.res{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.res div{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+.res b{display:block;font-size:1.25rem;font-variant-numeric:tabular-nums}
+.res small{color:var(--dim)}
+.ore b{color:var(--ore)}.cry b{color:var(--cry)}.pla b{color:var(--pla)}
+.mine-wrap{position:relative;text-align:center;padding:14px 0;perspective:600px}
+#mine{width:170px;height:170px;border-radius:50%;border:7px solid #b8860b;cursor:pointer;font-weight:800;font-size:1.25rem;color:#4a3200;background:radial-gradient(circle at 35% 30%,#fff1a8,#ffcc33 50%,#c9961a);box-shadow:0 0 40px #ffcc3355,inset -8px -12px 24px #0005;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+#mine.tails{background:radial-gradient(circle at 35% 30%,#fff,#cfd6e4 50%,#8f99ad);border-color:#6b7488;color:#2a3140}
+#mine.fl{animation:cf .6s ease-out}
+@keyframes cf{50%{transform:rotateY(540deg) translateY(-44px)}100%{transform:rotateY(1080deg)}}
+.float{position:absolute;pointer-events:none;font-weight:800;text-shadow:0 0 8px #000;animation:fl 1s ease-out forwards;white-space:nowrap}
+@keyframes fl{to{transform:translateY(-90px);opacity:0}}
+.bar{height:12px;background:var(--well);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#d89a1a,var(--ore));transition:width .25s}
+.bar.s i{background:linear-gradient(90deg,#2fbf71,var(--ok))}
+.lbl{display:flex;justify-content:space-between;font-size:.78rem;color:var(--dim);margin:8px 0 4px;gap:8px;flex-wrap:wrap}
+.up{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;background:linear-gradient(180deg,var(--panel2),#101c15);border:1px solid #2f5440;color:var(--text);border-radius:12px;padding:10px;margin-bottom:8px;cursor:pointer;text-align:left;transition:.15s;font:inherit}
+.up:hover:not(:disabled){border-color:var(--ore);transform:translateX(2px);box-shadow:0 0 16px #ffcc3333}
+.up:disabled{opacity:.45;cursor:not-allowed;border-color:var(--line)}
+.up .ic{flex:none;width:46px;height:46px;border-radius:10px;background:#0d3a22;border:1px solid var(--line);display:grid;place-items:center;font-size:22px;overflow:hidden}
+.up .ic canvas{width:36px;height:36px;image-rendering:pixelated}
+.up .tx{flex:1;min-width:0}
+.up .n{font-weight:700}.up .d{font-size:.76rem;color:var(--dim)}
+.up .c{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;text-align:right;color:var(--ore)}
+.up .lv{color:var(--ok);font-size:.78rem}
+.cry-u .c{color:var(--cry)}.pla-u .c{color:var(--pla)}.dm-u .c{color:var(--dm)}
+#prestige{width:100%;padding:12px;border-radius:10px;border:1px solid var(--dm);background:var(--dmbg);color:var(--dm);font-weight:700;cursor:pointer;margin-top:10px}
+#prestige:disabled{opacity:.4;cursor:not-allowed}
+#prestige:not(:disabled){animation:pulse 1.6s infinite}
+@keyframes pulse{50%{box-shadow:0 0 18px #ffd24d66}}
+#toasts{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;z-index:20}
+.toast{background:var(--toast);border:1px solid var(--ore);border-left:5px solid var(--ore);padding:10px 14px;border-radius:8px;animation:in .3s,out .5s 3.5s forwards;max-width:280px;font-size:.9rem}
+@keyframes in{from{transform:translateX(120%);opacity:0}}
+@keyframes out{to{opacity:0;transform:translateY(10px)}}
+.ms{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.ms span{font-size:.72rem;padding:3px 8px;border-radius:99px;background:var(--well);border:1px solid var(--line);color:var(--dim)}
+.ms span.on{color:#1a1100;background:var(--ore);border-color:var(--ore)}
+.flash{animation:fs .8s}
+@keyframes fs{0%{box-shadow:0 0 0 0 #ffcc33aa}100%{box-shadow:0 0 0 24px #ffcc3300}}
+#modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:30;padding:20px}
+#modal.show{display:flex}
+#modal div{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;max-width:360px;width:100%}
+#modal p{margin:0 0 16px;line-height:1.45}
+#modal button{padding:8px 16px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);cursor:pointer;margin-right:8px;font:inherit}
+#modal button#mok{border-color:var(--dm);color:var(--dm)}
+.under{max-width:1150px;margin:0 auto;padding:0 18px 24px;display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+@media(max-width:820px){.under{grid-template-columns:1fr}}
+.under .card{margin:0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:8px;font-size:.88rem}
+.row small{color:var(--dim)}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+.mb{padding:5px 10px;border-radius:7px;border:1px solid #2f5440;background:#0d3a22;color:var(--text);cursor:pointer;font-size:.78rem}
+.mb:hover{border-color:var(--ore)}
+.kv{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:.88rem;margin-bottom:10px}
+.kv span{color:var(--dim)}
+.hint{font-size:.74rem;color:var(--dim);margin:10px 0 0}
+.pos{color:var(--ok)}.neg{color:var(--cry)}
+.bar.h i{background:linear-gradient(90deg,#ffcc33,#ff4d4d)}
+#fam{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:25;padding:14px}
+#fam.show{display:flex}
+.fp{background:var(--panel);border:1px solid var(--line);border-radius:14px;width:100%;max-width:760px;max-height:calc(100vh - 28px);overflow:auto;padding:16px}
+.fh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.don{background:linear-gradient(90deg,#2a2208,var(--panel2));border:1px solid var(--dm);border-radius:10px;padding:10px;margin-bottom:12px;font-size:.9rem}
+.bg{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.blk{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:.85rem}
+.blk.own{border-color:var(--ok)}
+.mb:disabled{opacity:.4;cursor:not-allowed}
+body{font-family:Inter,system-ui,Segoe UI,Roboto,sans-serif}
+.card{background:linear-gradient(180deg,#14251c,#0e1914);border:1px solid #223a2c;border-radius:16px;transition:border-color .2s;animation:rise .5s both}
+.card:hover{border-color:#34563f}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+.card h2{display:flex;align-items:center;gap:8px;color:var(--text);font-size:.78rem}
+.card h2::before{content:'';width:4px;height:14px;border-radius:2px;background:var(--ore)}
+.res div{padding:14px 8px;border-radius:12px}
+.res b{font-size:1.5rem}
+.ore>small:first-child::before{content:'💵 '}.cry>small:first-child::before{content:'🎟️ '}.pla>small:first-child::before{content:'💎 '}
+.up:not(:disabled){animation:glow 2.6s infinite}
+@keyframes glow{50%{box-shadow:0 0 14px #ffcc3326}}
+.bar{height:10px}.bar i{box-shadow:inset 0 2px 0 #fff3}
+.mb{transition:.15s}.mb:hover:not(:disabled){transform:translateY(-1px);background:#14573a}
+.tools button{border-radius:99px}
+#skBtn{color:var(--ore);border-color:#6b5a1a}
+.pill{padding:4px 10px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);font-size:.8rem}
+.node{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px;margin-top:8px;font-size:.82rem}
+.node.own{border-color:var(--ok);background:#12301f}.node.av{border-color:var(--ore)}.node.lk{opacity:.5}
+#mine:hover{filter:brightness(1.08)}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:#2a4a38;border-radius:8px}
+#skm{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:25;padding:14px}
+#skm.show{display:flex}
+#co{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:25;padding:14px}
+#co.show{display:flex}
+.mb.on{border-color:var(--ore);background:#14573a}
+.og{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-width:480px;margin-top:10px}
+.tile{aspect-ratio:1;display:grid;place-items:center;background:#0d3a22;border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:1.4rem;position:relative}
+.tile:hover{border-color:var(--ore)}
+.tile .ab{position:absolute;bottom:1px;right:3px;font-size:.6rem;color:var(--ok)}
+#pf{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:25;padding:14px}
+#pf.show{display:flex}
+.tile{background:var(--tile,#0d3a22)}
+#mine.c1{background:radial-gradient(circle at 35% 30%,#d6ffe6,#3ddc84 50%,#17794a);border-color:#1f7a4a;color:#04210f}
+#mine.c2{background:radial-gradient(circle at 35% 30%,#ffd6dc,#ff4d6a 50%,#8a1b30);border-color:#8a1b30;color:#2a0510}
+#mine.c3{background:radial-gradient(circle at 35% 30%,#6b6b78,#2c2c36 50%,#101015);border-color:#4a4a58;color:#e9e9f2}
+#mine.c1.tails,#mine.c2.tails,#mine.c3.tails{background:radial-gradient(circle at 35% 30%,#fff,#cfd6e4 50%,#8f99ad);border-color:#6b7488;color:#2a3140}
+</style>
+</head>
+<body>
+<header>
+  <h1>🪙 Lucky <span>Table</span></h1>
+  <div class="tools"><button id='skBtn'>✨ Skills</button><button id='pfBtn'>🎭 Profile</button><button id='coBtn'>🏢 Company</button><button id="save">Save</button><button id="reset">Hard Reset</button></div>
+</header>
+<div class="scene card"><h2>The Casino Floor</h2><canvas id="scene" width="640" height="192"></canvas></div>
+<main>
+  <section>
+    <div class="card" id="rescard">
+      <div class="res">
+        <div class="ore"><small>Cash</small><b id="ore">0</b><small id="ops">0/s</small></div>
+        <div class="cry"><small>Chips</small><b id="cry">0</b><small id="cps">0/s</small></div>
+        <div class="pla"><small>Gems</small><b id="pla">0</b><small id="pps">0/s</small></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>The Table</h2>
+      <div class="mine-wrap" id="mw"><button id="mine"><span id="face">FLIP</span><br><small id="cpow"></small></button></div>
+      <div class="lbl"><span id="odds">Heads chance 50%</span><span id="streak">Streak 0</span></div>
+      <div class="bar s"><i id="sbar"></i></div>
+      <div class="lbl"><span>Next milestone</span><span id="mslabel"></span></div>
+      <div class="bar"><i id="msbar"></i></div>
+      <div class="ms" id="mslist"></div>
+    </div>
+    <div class="card">
+      <h2>Cash Out (Prestige)</h2>
+      <div class="lbl"><span>Lucky Stars: <b id="dm" style="color:var(--dm)">0</b> (+<span id="dmbonus">0</span>% cash)</span><span id="dmgain"></span></div>
+      <div class="bar"><i id="pbar"></i></div>
+      <button id="prestige">Cash Out</button>
+      <h2 style="margin-top:16px">Star Perks</h2>
+      <div id="dmshop"></div>
+    </div>
+  </section>
+  <section>
+    <div class="card"><h2>Staff &amp; Coins (spend Cash)</h2><div id="ups"></div></div>
+    <div class="card"><h2>Chip Shop (spend Chips)</h2><div id="cu"></div></div>
+    <div class="card"><h2>Gem Vault (spend Gems)</h2><div id="pu"></div></div>
+  </section>
+</main>
+<section class='under'>
+<div class='card'><h2>First National Bank</h2><div class='kv'><span>Savings</span><b id='bk_bank'></b><span>Interest paid on up to</span><b id='bk_cap'></b><span>Loan debt</span><b id='bk_debt'></b><span>Net worth</span><b id='bk_net'></b></div><div class='btns'><button class='mb' id='b_dep'>Deposit all</button><button class='mb' id='b_wd'>Withdraw all</button><button class='mb' id='b_bor'>Borrow max</button><button class='mb' id='b_rep'>Repay loan</button></div><p class='hint'>Savings pay 0.3%/min (capped). Loans cost 1.2%/min and are limited by your income.</p></div>
+<div class='card'><h2>Stock Exchange</h2><div id='inv'></div><p class='hint'>Prices swing and drift back to fair value. Crashes happen, and crypto crashes hardest.</p></div>
+<div class='card'><h2 id='famH' style='cursor:pointer'>The Family (Mafia) ▸</h2><button class='mb' id='famBtn' style='margin-bottom:10px'>Open Family HQ</button><div class='lbl'><span>Heat <b id='heat_t'></b></span><span>Respect <b id='resp'></b> (better odds)</span></div><div class='bar h'><i id='heat'></i></div><div id='jobs' style='margin-top:10px'></div><div class='lbl'><span id='jlabel'>No job running</span></div><div class='bar'><i id='jbar'></i></div><h2 style='margin-top:14px'>Loan Shark</h2><div class='kv'><span>You owe</span><b id='sk_debt'></b></div><div class='btns'><button class='mb' id='s_bor'>Borrow</button><button class='mb' id='s_pay'>Repay</button></div><p class='hint'>Instant cash at 4.8%/min, and his collectors shake you down while you owe. At 100 heat the cops raid you.</p></div>
+<div class='card'><h2>Back-Alley Deals</h2><div id='bm'></div><p class='hint'>Buy low, sell high. Every deal adds heat, and hot goods can be seized when you sell. Raids confiscate half your stash.</p></div>
+</section>
+<div id='fam'><div class='fp'><div class='fh'><b>🎩 Family HQ</b><span><button class='mb' data-a='tab:f'>Family</button> <button class='mb' data-a='tab:t'>Territory</button></span><button class='mb' data-a='close'>✕ Close</button></div><div id='fbody'></div></div></div>
+<div id='skm'><div class='fp'><div class='fh'><b>✨ Skill Tree</b><span class='pill'>Legacy ♛ <b id='legn'>0</b></span><button class='mb' data-a='close'>✕ Close</button></div><div id='skbody'></div></div></div>
+<div id='co'><div class='fp'><div class='fh'><b>🏢 Company</b><span><button class='mb' data-a='tab:a'>Applications</button> <button class='mb' data-a='tab:s'>Staff</button> <button class='mb' data-a='tab:o'>Office</button></span><button class='mb' data-a='close'>✕ Close</button></div><div id='cobody'></div></div></div>
+<div id='pf'><div class='fp'><div class='fh'><b>🎭 Profile &amp; Style</b><button class='mb' data-a='close'>✕ Close</button></div><div id='pfbody'></div></div></div>
+<div id="toasts"></div>
+<div id="modal"><div><p id="mtext"></p><button id="mok">Confirm</button><button id="mno">Cancel</button></div></div>
+<script>
+const KEY='luckyTable_v1',G=1.15,OFFLINE_CAP=8*3600;
+const UPS=[
+ {id:'helper',name:'Helper',desc:'Flips coins for you. +0.5 cash/s',base:15,ore:0.5},
+ {id:'copper',name:'Copper Coins',desc:'+4 cash/s, +0.02 chips/s',base:100,ore:4,cry:0.02},
+ {id:'silver',name:'Silver Coins',desc:'+32 cash/s, +0.1 chips/s',base:1100,ore:32,cry:0.1},
+ {id:'dealer',name:'Dealer',desc:'+220 cash/s, +0.03 gems/s',base:12000,ore:220,pla:0.03},
+ {id:'gold',name:'Gold Coins',desc:'+1500 cash/s, +0.15 gems/s',base:130000,ore:1500,pla:0.15},
+ {id:'boss',name:'Casino Boss',desc:'+11000 cash/s, +0.4 gems/s, +0.5 chips/s',base:1.4e6,ore:11000,pla:0.4,cry:0.5}
+];
+const CU=[{id:'lattice',name:'Chip Stacks',desc:'+10% all cash per level',base:10},
+          {id:'focus',name:'Lucky Charm',desc:'+4% heads chance per level (max 95%)',base:25}];
+const PU=[{id:'cannon',name:'Heavy Coins',desc:'+1 base flip value per level',base:5},
+          {id:'overclock',name:'Hot Hands',desc:'+15% cash production per level',base:20}];
+const DMU=[{id:'hyper',name:'Rigged Table',desc:'x1.5 cash per level',base:3,g:2.2},
+           {id:'bots',name:'Auto-Flippers',desc:'+1 auto-flip/s per level',base:5,g:2.2},
+           {id:'cart',name:'Jackpot Odds',desc:'x2 chips & gems per level',base:8,g:2.5}];
+const MS=[100,1e3,1e4,1e5,1e6,1e7,1e8,1e9,1e10,1e11,1e12];
+const fresh=()=>({ore:0,runOre:0,totalOre:0,cry:0,pla:0,dm:0,u:{},cu:{},pu:{},du:{},ms:0,last:Date.now(),clicks:0,jumps:0,bank:0,debt:0,shark:0,heat:0,resp:0,job:null,hold:{},px:{bonds:100,stocks:100,crypto:100,cigars:40,whiskey:250,diamonds:1500},crew:[],gf:null,blocks:[0,0,0,0,0,0],nid:1,leg:0,legT:0,sk:{},dmTot:0,rb:0,co:{apps:[],staff:[],grid:Array(24).fill(null),nid:1,t:0},mor:0,cfg:{accent:'#ffcc33',felt:0,coin:0,floor:0,logo:'🪙',name:'Lucky Table'}});
+let S=fresh(),streak=0;
+function fmt(n){
+  if(n<1000)return n<10&&n%1?n.toFixed(2):n<100&&n%1?n.toFixed(1):Math.floor(n).toString();
+  const s=['K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc'];
+  const e=Math.min(Math.floor(Math.log10(n)/3),s.length);
+  return (n/Math.pow(10,e*3)).toFixed(2)+s[e-1];
+}
+const lv=(o,k)=>o[k]||0;
+const cost=(b,n,g=G)=>Math.ceil(b*Math.pow(g,n));
+function mults(){
+  const dmM=(1+0.1*S.dm)*(1+0.1*S.legT)*(sk('e3')?1.5:1),lat=1+0.1*lv(S.cu,'lattice'),ovc=1+0.15*lv(S.pu,'overclock'),hyp=Math.pow(1.5,lv(S.du,'hyper'));
+  return {ore:dmM*lat*ovc*hyp,sub:Math.pow(2,lv(S.du,'cart'))};
+}
+function rates(){
+  const m=mults();let o=0,c=0,p=0;
+  for(const u of UPS){const n=lv(S.u,u.id);o+=n*u.ore;c+=n*(u.cry||0);p+=n*(u.pla||0);}
+  return {ore:o*m.ore,cry:c*m.sub,pla:p*m.sub};
+}
+const headsP=()=>Math.min(0.95,0.5+0.04*lv(S.cu,'focus')+(sk('f1')?.05:0));
+const clickPow=()=>2*(1+lv(S.pu,'cannon'))*mults().ore*(1+rates().ore*0.01);
+const prestigeGain=()=>Math.floor(Math.sqrt(S.runOre/1e6));
+const $=id=>document.getElementById(id);
+function toast(t,c){const d=document.createElement('div');d.className='toast';if(c)d.style.borderColor=d.style.borderLeftColor=c;d.textContent=t;$('toasts').appendChild(d);setTimeout(()=>d.remove(),4100);}
+let modalCb=null;
+function ask(text,cb){$('mtext').textContent=text;modalCb=cb;$('modal').classList.add('show');}
+$('mok').onclick=()=>{$('modal').classList.remove('show');const f=modalCb;modalCb=null;if(f)f();};
+$('mno').onclick=()=>{$('modal').classList.remove('show');modalCb=null;};
+
+const PAL={y:'#ffcc33',Y:'#c9961a',s:'#f0b890',g:'#9aa5b8',r:'#e0453a',w:'#ffffff',k:'#2b2f3d',n:'#d98a4a',N:'#8a5522',l:'#e3e9f5',L:'#8f99ad',o:'#1a1020'};
+const stack=(a,b)=>['........','...aa...','..aaaa..','.bbbbbb.','..aaaa..','.bbbbbb.','..aaaa..','.bbbbbb.'].map(r=>r.replace(/a/g,'\u0001').replace(/b/g,'\u0002').replace(/\u0001/g,a).replace(/\u0002/g,b));
+const SPR={
+ helper:['..kkkk..','.kssssk.','..ssss..','..rrrr.y','.srrrrs.','..rrrr..','..g..g..','.kk..kk.'],
+ copper:stack('n','N'),silver:stack('l','L'),gold:stack('y','Y'),
+ dealer:['..kkkk..','.kssssk.','..ssss..','..wrrw..','.kkwwkk.','.kkwwkk.','..kkkk..','.kk..kk.'],
+ boss:['.y.yy.y.','.yyyyyy.','..ssss..','..ssss..','.yyyyyy.','yyyyyyyy','.yy..yy.','.kk..kk.']
+};
+const ICONS={lattice:'🎰',focus:'🍀',cannon:'🪙',overclock:'🔥',hyper:'🎲',bots:'🤖',cart:'🃏'};
+function drawSpr(c,id,x,y,s){const r=SPR[id];for(let j=0;j<8;j++)for(let i=0;i<8;i++){const h=r[j][i];if(h!=='.'){c.fillStyle=PAL[h];c.fillRect(x+i*s,y+j*s,s,s);}}}
+function spriteCanvas(id,s){const c=document.createElement('canvas');c.width=c.height=8*s;drawSpr(c.getContext('2d'),id,0,0,s);return c;}
+
+function build(list,el,kind){
+  const root=$(el);root.innerHTML='';
+  list.forEach(u=>{
+    const b=document.createElement('button');
+    b.className='up '+(kind==='cu'?'cry-u':kind==='pu'?'pla-u':kind==='du'?'dm-u':'');
+    b.id=kind+'_'+u.id;
+    b.innerHTML=`<span class="ic"></span><div class="tx"><div class="n">${u.name} <span class="lv"></span></div><div class="d">${u.desc}</div></div><div class="c"></div>`;
+    const ic=b.querySelector('.ic');if(SPR[u.id])ic.appendChild(spriteCanvas(u.id,4));else ic.textContent=ICONS[u.id]||'⬡';
+    b.onclick=()=>buy(kind,u);
+    root.appendChild(b);
+  });
+}
+const store=k=>k==='u'?S.u:k==='cu'?S.cu:k==='pu'?S.pu:S.du;
+const price=(k,u)=>cost(u.base,lv(store(k),u.id),u.g||G);
+const wallet=k=>k==='u'?'ore':k==='cu'?'cry':k==='pu'?'pla':'dm';
+const pop={};
+function buy(kind,u){
+  const p=price(kind,u),w=wallet(kind);
+  if(S[w]<p)return;
+  S[w]-=p;store(kind)[u.id]=lv(store(kind),u.id)+1;
+  if(kind==='u')pop[u.id]=performance.now();
+  const b=$(kind+'_'+u.id);b.classList.remove('flash');void b.offsetWidth;b.classList.add('flash');
+  update();
+}
+function floatTxt(t,col,x,y){
+  const f=document.createElement('div');f.className='float';f.textContent=t;f.style.color=col;
+  const r=$('mw').getBoundingClientRect();
+  f.style.left=(x-r.left-20+(Math.random()*30-15))+'px';f.style.top=(y-r.top-20)+'px';
+  $('mw').appendChild(f);setTimeout(()=>f.remove(),1000);
+}
+$('mine').addEventListener('click',e=>{
+  const b=e.currentTarget,r=b.getBoundingClientRect();
+  const x=e.clientX||r.left+r.width/2,y=e.clientY||r.top+r.height/2;
+  const heads=Math.random()<headsP();
+  b.classList.remove('fl');void b.offsetWidth;b.classList.add('fl');
+  S.clicks++;
+  let g=0;
+  if(heads){streak++;g=clickPow()*(1+Math.min(streak,sk('f2')?50:25)*0.04)*(sk('f3')?1.5:1);S.ore+=g;S.runOre+=g;S.totalOre+=g;}else streak=0;
+  setTimeout(()=>{b.classList.toggle('tails',!heads);$('face').textContent=heads?'HEADS':'TAILS';
+    floatTxt(heads?'+'+fmt(g):'Tails',heads?'#ffcc33':'#9aa5b8',x,y);},300);
+});
+function checkMilestones(){
+  while(S.ms<MS.length&&S.runOre>=MS[S.ms]){
+    toast('Jackpot! '+fmt(MS[S.ms])+' cash won this run!','#5dffa0');
+    S.ms++;$('rescard').classList.remove('flash');void $('rescard').offsetWidth;$('rescard').classList.add('flash');
+  }
+}
+$('prestige').onclick=()=>{
+  const g=prestigeGain();if(g<1)return;
+  ask(`Cash Out? You’ll gain ${g} Lucky Stars but reset cash, staff, chips and gems.`,()=>{
+    const g2=prestigeGain();if(g2<1)return;
+    S.dm+=g2;S.dmTot+=g2;S.jumps++;
+    Object.assign(S,{ore:0,runOre:0,cry:0,pla:0,u:{},cu:{},pu:{},ms:0,bank:0,debt:0,shark:0,heat:0,job:null,hold:{},px:fresh().px,blocks:[0,0,0,0,0,0]});streak=0;
+    toast('Cashed out! +'+g2+' Lucky Stars','#ffd24d');
+    update();save();
+  });
+};
+function update(){
+  const r=rates();
+  $('ore').textContent='$'+fmt(S.ore);$('cry').textContent=fmt(S.cry);$('pla').textContent=fmt(S.pla);
+  $('ops').textContent='$'+fmt(r.ore)+'/s';$('cps').textContent=fmt(r.cry)+'/s';$('pps').textContent=fmt(r.pla)+'/s';
+  $('cpow').textContent='$'+fmt(clickPow())+' / heads';
+  $('odds').textContent='Heads chance '+Math.round(headsP()*100)+'%';
+  $('streak').textContent='Streak '+streak+' (+'+Math.min(streak,sk('f2')?50:25)*4+'%)';
+  $('sbar').style.width=Math.min(100,streak/(sk('f2')?50:25)*100)+'%';
+  [['u',UPS],['cu',CU],['pu',PU],['du',DMU]].forEach(([k,l])=>l.forEach(u=>{
+    const b=$(k+'_'+u.id),p=price(k,u),w=wallet(k);
+    b.disabled=S[w]<p;
+    b.querySelector('.lv').textContent=lv(store(k),u.id)?'Lv '+lv(store(k),u.id):'';
+    b.querySelector('.c').textContent=fmt(p)+' '+({ore:'cash',cry:'chips',pla:'gems',dm:'★'})[w];
+  }));
+  const next=MS[Math.min(S.ms,MS.length-1)],prev=S.ms?MS[S.ms-1]:0;
+  const pct=S.ms>=MS.length?100:Math.min(100,(S.runOre-prev)/(next-prev)*100);
+  $('msbar').style.width=pct+'%';
+  $('mslabel').textContent=S.ms>=MS.length?'All done!':'$'+fmt(S.runOre)+' / $'+fmt(next);
+  $('mslist').innerHTML=MS.map((m,i)=>`<span class="${i<S.ms?'on':''}">${fmt(m)}</span>`).join('');
+  const g=prestigeGain();
+  $('dm').textContent=fmt(S.dm);$('dmbonus').textContent=fmt(S.dm*10);
+  $('dmgain').textContent=g>=1?'Cash out now: +'+g+' ★':'Need $1M this run';
+  $('pbar').style.width=Math.min(100,S.runOre/1e6*100)+'%';
+  $('prestige').disabled=g<1;
+  $('prestige').textContent=g>=1?'Cash Out  (+'+g+' Lucky Stars)':'Cash Out (locked)';
+  checkMilestones();
+}
+const ASSETS=[
+ {id:'bonds',n:'Gov Bonds',k:'inv',base:100,d:.0004,v:.002,cr:0,cd:0,h:0},
+ {id:'stocks',n:'Blue Chips',k:'inv',base:100,d:.0006,v:.01,cr:.001,cd:.25,h:0},
+ {id:'crypto',n:'CoinX',k:'inv',base:100,d:.001,v:.035,cr:.004,cd:.55,h:0},
+ {id:'cigars',n:'Fine Cigars',k:'bm',base:40,d:0,v:.03,cr:0,cd:0,h:2},
+ {id:'whiskey',n:'Rare Whiskey',k:'bm',base:250,d:0,v:.045,cr:0,cd:0,h:4},
+ {id:'diamonds',n:'Hot Diamonds',k:'bm',base:1500,d:0,v:.06,cr:0,cd:0,h:8}];
+const JOBS=[{id:'hustle',n:'Street Hustle',pct:.05,min:50,p:.75,m:1.6,h:8,d:6,r:1},{id:'heist',n:'Bank Heist',pct:.15,min:200,p:.55,m:2.6,h:20,d:12,r:2},{id:'cartel',n:'Cartel Deal',pct:.3,min:1000,p:.4,m:4.5,h:35,d:20,r:4}];
+let mAcc=0,skAcc=0;const lastRet={};
+const loanLim=()=>500+rates().ore*120;
+const jp=j=>Math.min(.9,j.p+Math.min(.15,S.resp*.005)+Math.min(.1,cnt(0)*.01)+(sk('u1')?.08:0));
+function startJob(j){if(S.job)return;const st=Math.max(j.min,S.ore*j.pct);if(S.ore<st){toast('Not enough cash for the stake.');return;}S.ore-=st;S.job={id:j.id,stake:st,dur:j.d*1000,end:Date.now()+j.d*1000};}
+function finishJob(){const j=JOBS.find(x=>x.id===S.job.id),st=S.job.stake;S.job=null;S.mor=cl(S.mor-j.r*2);
+ if(Math.random()<jp(j)){const pay=st*j.m*(gfT()==='Ruthless'?1.2:1)*(moral()<0?1.25:1);S.ore+=pay;S.runOre+=pay-st;S.totalOre+=pay-st;S.resp+=j.r*(gfT()==='Charming'?1.5:1);S.heat+=j.h;toast(j.n+' succeeded! +$'+fmt(pay-st)+' profit','#5dffa0');}
+ else{S.heat+=j.h*1.5;toast(j.n+' went bad. You lost the $'+fmt(st)+' stake.','#ff7a7a');}}
+function trade(id,mode){const a=ASSETS.find(x=>x.id===id),px=S.px[id],h=S.hold[id]||(S.hold[id]={q:0,c:0});
+ if(mode==='sell'){if(h.q<=0)return;const pr=h.q*px;
+  if(a.k==='bm'&&Math.random()<S.heat/250){toast('Cops intercepted your '+a.n+' shipment!','#ff7a7a');h.q=0;h.c=0;S.heat+=a.h;return;}
+  if(a.k==='bm')S.mor=cl(S.mor-1);S.ore+=pr;const pf=pr-h.c;if(pf>0){S.runOre+=pf;S.totalOre+=pf;}h.q=0;h.c=0;S.heat+=a.h;}
+ else{const sp=mode==='max'?S.ore:S.ore*.25;if(sp<1)return;h.q+=sp/px;h.c+=sp;S.ore-=sp;S.heat+=a.h;}}
+function world(dt){
+ const di=Math.min(dt,600),cap=1000+rates().ore*600;
+ const it=Math.min(S.bank,cap)*(Math.pow(sk('e1')?1.0001:1.00005,di)-1);S.bank+=it;S.runOre+=it;S.totalOre+=it;
+ S.debt*=Math.pow(1.0002,di);S.shark*=Math.pow(1.0008,di);
+ mAcc+=dt;
+ while(mAcc>=1){mAcc--;ASSETS.forEach(a=>{
+  let r=a.d+a.v*(Math.random()+Math.random()+Math.random()-1.5)*2-0.01*Math.log(S.px[a.id]/a.base);
+  let p=S.px[a.id]*Math.exp(r);if(a.cr&&Math.random()<a.cr*(sk('u3')?.5:1))p*=1-a.cd;
+  S.px[a.id]=Math.max(1,p);lastRet[a.id]=r;});}
+ let bi=0,bl=0;S.blocks.forEach((L,i)=>{if(L){bi+=blkInc(i);bl+=L;}});S.ore+=bi*dt;S.runOre+=bi*dt;S.totalOre+=bi*dt;
+ S.heat=Math.max(0,S.heat+(0.006*bl-0.4-S.resp*0.01-cnt(2)*.15-(gfT()==='Cunning'?.3:0)-(sk('u2')?.5:0)-(moral()>0?.3:0))*dt);
+ if(dt<2){
+  if(S.shark>1){skAcc+=dt;if(skAcc>=45){skAcc=0;const t=S.ore*.12*(1-eRed());S.ore-=t;toast('The shark’s collectors took $'+fmt(t)+'.','#ff7a7a');}}else skAcc=0;rival(dt);
+  if(S.heat>=100){const l=S.ore*.3*(1-eRed());S.ore-=l;for(const k in S.hold)if(S.hold[k]){S.hold[k].q*=.5;S.hold[k].c*=.5;}S.heat=45;toast('Police raid! Lost $'+fmt(l)+' and half your stash.','#ff7a7a');}
+ }
+}
+function buildWorld(){
+ ASSETS.forEach(a=>{const d=document.createElement('div');d.className='row';
+  d.innerHTML=`<div><b>${a.n}</b> <span id='p_${a.id}'></span><br><small id='h_${a.id}'></small></div><div class='btns'><button class='mb' data-m='q'>Buy 25%</button><button class='mb' data-m='max'>Max</button><button class='mb' data-m='sell'>Sell</button></div>`;
+  d.querySelectorAll('button').forEach(b=>b.onclick=()=>{trade(a.id,b.dataset.m);uw();update();});
+  $(a.k==='inv'?'inv':'bm').appendChild(d);});
+ JOBS.forEach(j=>{const b=document.createElement('button');b.className='up';b.id='jb_'+j.id;b.innerHTML=`<div class='tx'><div class='n'>${j.n}</div><div class='d' id='jt_${j.id}'></div></div>`;b.onclick=()=>{startJob(j);uw();update();};$('jobs').appendChild(b);});
+ $('b_dep').onclick=()=>{S.bank+=S.ore;S.ore=0;uw();update();};
+ $('b_wd').onclick=()=>{S.ore+=S.bank;S.bank=0;uw();update();};
+ $('b_bor').onclick=()=>{const a=Math.max(0,loanLim()-S.debt);S.ore+=a;S.debt+=a;uw();update();};
+ $('b_rep').onclick=()=>{const p=Math.min(S.ore,S.debt);S.ore-=p;S.debt-=p;uw();update();};
+ $('s_bor').onclick=()=>{const a=Math.max(0,loanLim()*3-S.shark);if(a>0)S.mor=cl(S.mor-3);S.ore+=a;S.shark+=a;uw();update();};
+ $('s_pay').onclick=()=>{const p=Math.min(S.ore,S.shark);S.ore-=p;S.shark-=p;if(S.shark<1)S.shark=0;uw();update();};
+}
+function uw(){
+ const set=(i,t)=>{const e=$(i);if(e)e.textContent=t;};
+ if(S.job&&Date.now()>=S.job.end)finishJob();
+ let hv=0;
+ ASSETS.forEach(a=>{const h=S.hold[a.id]||{q:0,c:0},v=h.q*S.px[a.id];hv+=v;
+  set('p_'+a.id,'$'+fmt(S.px[a.id]));$('p_'+a.id).className=(lastRet[a.id]||0)>=0?'pos':'neg';
+  set('h_'+a.id,h.q>0.0001?fmt(h.q)+' held · worth $'+fmt(v)+' ('+(v>=h.c?'+':'−')+'$'+fmt(Math.abs(v-h.c))+')':'none held');});
+ set('bk_bank','$'+fmt(S.bank));set('bk_cap','$'+fmt(1000+rates().ore*600));set('bk_debt','$'+fmt(S.debt)+' / $'+fmt(loanLim()));
+ set('bk_net','$'+fmt(S.ore+S.bank+hv-S.debt-S.shark));$('pfBtn').textContent='🎭 '+tier();
+ $('heat').style.width=Math.min(100,S.heat)+'%';set('heat_t',Math.floor(S.heat)+'/100');set('resp',Math.floor(S.resp));
+ JOBS.forEach(j=>{const st=Math.max(j.min,S.ore*j.pct);set('jt_'+j.id,'Stake $'+fmt(st)+' · '+Math.round(jp(j)*100)+'% win · pays x'+j.m);$('jb_'+j.id).disabled=!!S.job||S.ore<st;});
+ if(S.job){const j=JOBS.find(x=>x.id===S.job.id);$('jbar').style.width=Math.min(100,(1-(S.job.end-Date.now())/S.job.dur)*100)+'%';set('jlabel','Running: '+j.n);}
+ else{$('jbar').style.width='0%';set('jlabel','No job running');}
+ set('sk_debt','$'+fmt(S.shark)+' (max $'+fmt(loanLim()*3)+')');
+ $('skBtn').textContent='✨ Skills'+(S.leg>0?' ('+S.leg+')':'');
+}
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const FN=['Vinnie','Sal','Tony','Marco','Luca','Rocco','Nico','Enzo','Carlo','Dante','Gino','Paulie'],LN=['Rossi','Bianchi','Conti','Greco','Ricci','Moretti','Lombardi','Costa'],TRT=['Ruthless','Cunning','Charming','Greedy'];
+const TR={Ruthless:'+20% job payouts',Cunning:'Heat cools 0.3/s faster',Charming:'-25% recruit cost, +50% Respect gain',Greedy:'+30% block income'};
+const ROLES=[{n:'Soldier',c:1,s:'helper',d:'+1% job win chance, +1 defense'},{n:'Enforcer',c:1.2,s:'dealer',d:'+2 defense, -4% raid and shakedown losses'},{n:'Lookout',c:1.1,s:'helper',d:'heat cools 0.15/s faster'}];
+const BLK=[{n:'Dockside',inc:6,cost:1500},{n:'Old Town',inc:12,cost:9000},{n:'Market Row',inc:30,cost:50000},{n:'Rail Yard',inc:75,cost:3e5},{n:'Harbor Club',inc:180,cost:1.8e6},{n:'Uptown',inc:450,cost:1.1e7}];
+const gf=()=>S.crew.find(m=>m.id===S.gf),gfT=()=>(gf()||{}).t||'';
+const cnt=r=>S.crew.filter(m=>m.r===r).length;
+const def=()=>cnt(0)+cnt(1)*2+(gf()?3:0);
+const eRed=()=>Math.min(.6,cnt(1)*.04);
+const blkInc=i=>S.blocks[i]?BLK[i].inc*(1+.5*(S.blocks[i]-1))*(gfT()==='Greedy'?1.3:1)*(moral()<0?1.25:1):0;
+const totInc=()=>BLK.reduce((s,b,i)=>s+blkInc(i),0);
+const recCost=r=>Math.ceil(400*Math.pow(1.35,S.crew.length)*ROLES[r].c*(gfT()==='Charming'?.75:1));
+const upCost=i=>Math.ceil(BLK[i].cost*(S.blocks[i]?0.6*Math.pow(1.7,S.blocks[i]):1));
+const sprURL=id=>spriteCanvas(id,3).toDataURL();
+let ftab='f',rvAcc=0;
+function rival(dt){const own=S.blocks.map((L,i)=>L?i:-1).filter(i=>i>=0);if(!own.length){rvAcc=0;return;}rvAcc+=dt;if(rvAcc<90)return;rvAcc=0;
+ const i=pick(own),L=S.blocks[i],thr=L*3+own.length*2+Math.random()*5;
+ if(def()>=thr){S.resp+=1;toast('Rivals hit '+BLK[i].n+' and were beaten back. +1 Respect','#5dffa0');}
+ else{S.blocks[i]=L-1;toast('Rivals overran '+BLK[i].n+'! It lost a level.','#ff7a7a');}
+ if($('fam').classList.contains('show'))famRender();}
+function famRender(){
+ const g=gf(),h=[],im=id=>`<img src='${sprURL(id)}' width='24' height='24' style='image-rendering:pixelated;vertical-align:middle'>`;
+ if(ftab==='f'){
+  h.push(`<div class='don'>${g?im('boss')+` <b>Don ${g.n}</b> · ${g.t}<br><small>${TR[g.t]}. The Godfather also gives +3 defense.</small>`:`<b>No Godfather yet</b><br><small>Pick one from your roster. Their trait becomes a boss bonus.</small>`}</div>`);
+  h.push(`<div class='lbl'><span>Members ${S.crew.length}/24</span><span>Defense ${def()}</span><span>Respect ${Math.floor(S.resp)}</span><span>Cash $${fmt(S.ore)}</span></div>`);
+  h.push(`<div class='btns' style='margin-bottom:6px'>`+ROLES.map((r,i)=>`<button class='mb' data-a='rec:${i}' ${S.ore<recCost(i)||S.crew.length>=24?'disabled':''}>Recruit ${r.n} $${fmt(recCost(i))}</button>`).join('')+`</div><p class='hint' style='margin:0 0 12px'>`+ROLES.map(r=>r.n+': '+r.d).join(' · ')+`</p>`);
+  if(!S.crew.length)h.push(`<p class='hint'>Your family is empty. Recruit your first soldier.</p>`);
+  S.crew.forEach(m=>h.push(`<div class='row'><div>${im(m.id===S.gf?'boss':ROLES[m.r].s)} <b>${m.n}</b> <small>${ROLES[m.r].n} · ${m.t}${m.id===S.gf?' · GODFATHER':''}</small></div><div class='btns'>${m.id===S.gf?'':`<button class='mb' data-a='gf:${m.id}'>Make Godfather</button>`}<button class='mb' data-a='fire:${m.id}'>Dismiss</button></div></div>`));
+ }else{
+  h.push(`<div class='lbl'><span>Protection income $${fmt(totInc())}/s</span><span>Defense ${def()}</span><span>Cash $${fmt(S.ore)}</span></div><div class='bg'>`+BLK.map((b,i)=>{const L=S.blocks[i],c=L?upCost(i):b.cost,mx=L>=5;return `<div class='blk ${L?'own':''}'><b>${b.n}</b> <small>${L?'Level '+L+'/5':'Unclaimed'}</small><br><small>$${fmt(L?blkInc(i):b.inc)}/s protection${L?'':' once claimed'}</small><br><button class='mb' style='margin-top:6px' data-a='blk:${i}' ${mx||S.ore<c?'disabled':''}>${mx?'Maxed':(L?'Upgrade':'Claim')+' $'+fmt(c)}</button></div>`;}).join('')+`</div><p class='hint'>Rivals hit a random block about every 90s. If your defense is below their strength, that block drops a level. Owned blocks add a little heat.</p>`);
+ }
+ $('fbody').innerHTML=h.join('');
+}
+$('fam').onclick=e=>{const el=e.target.closest('[data-a]');if(!el){if(e.target.id==='fam')$('fam').classList.remove('show');return;}
+ const [a,v]=el.dataset.a.split(':');
+ if(a==='close'){$('fam').classList.remove('show');return;}
+ if(a==='tab')ftab=v;
+ else if(a==='rec'){const r=+v,c=recCost(r);if(S.ore>=c&&S.crew.length<24){S.ore-=c;const m={id:S.nid++,n:pick(FN)+' '+pick(LN),r,t:pick(TRT)};S.crew.push(m);toast(m.n+' joins the family as a '+ROLES[r].n+'.','#ffd24d');}}
+ else if(a==='gf'){S.gf=+v;toast('A new Don rises.','#ffd24d');}
+ else if(a==='fire'){S.crew=S.crew.filter(m=>m.id!==+v);if(S.gf===+v)S.gf=null;}
+ else if(a==='blk'){const i=+v,c=S.blocks[i]?upCost(i):BLK[i].cost;if(S.ore>=c&&S.blocks[i]<5){S.ore-=c;S.blocks[i]++;}}
+ famRender();update();};
+$('famBtn').onclick=$('famH').onclick=()=>{famRender();$('fam').classList.add('show');};
+const sk=id=>!!S.sk[id];
+const SKT=[
+ {id:'f1',b:0,n:'Lucky Start',d:'+5% heads chance',c:1,r:null},
+ {id:'f2',b:0,n:'Hot Streak',d:'Streak bonus cap doubles (x50)',c:2,r:'f1'},
+ {id:'f3',b:0,n:'Double or Nothing',d:'Heads pays x1.5',c:3,r:'f2'},
+ {id:'e1',b:1,n:'Compound Interest',d:'Savings interest x2',c:1,r:null},
+ {id:'e2',b:1,n:'Night Shift',d:'Offline progress cap doubles (16h)',c:2,r:'e1'},
+ {id:'e3',b:1,n:'Monopoly',d:'+50% all cash',c:3,r:'e2'},
+ {id:'u1',b:2,n:'Street Cred',d:'+8% job win chance',c:1,r:null},
+ {id:'u2',b:2,n:'Bribed Cops',d:'Heat cools 0.5/s faster',c:2,r:'u1'},
+ {id:'u3',b:2,n:'Insider Trading',d:'Market crashes half as likely',c:3,r:'u2'}];
+const BR=['🍀 Fortune','🏛️ Empire','🕶️ Underworld'];
+function skRender(){
+ const gain=Math.floor(Math.sqrt(S.dmTot/10)),can=S.dmTot>=10;
+ const h=[`<div class='don'><b>Rebirth</b> · ${S.rb} so far<br><small>Lifetime Lucky Stars: ${fmt(S.dmTot)} (need 10). Rebirth resets EVERYTHING (cash, stars, family, blocks) but keeps your skills and grants ♛ Legacy: +10% cash each, plus 1 skill point each.</small><div class='bar' style='margin:8px 0'><i style='width:${Math.min(100,S.dmTot*10)}%'></i></div><button class='mb' data-a='rebirth' ${can?'':'disabled'}>${can?'Rebirth for +'+gain+' ♛':'Locked'}</button></div><div class='bg'>`];
+ for(let b=0;b<3;b++)h.push(`<div class='blk'><b>${BR[b]}</b>`+SKT.filter(n=>n.b===b).map(n=>{const o=sk(n.id),ok=!n.r||sk(n.r),cn=!o&&ok&&S.leg>=n.c;return `<div class='node ${o?'own':ok?'av':'lk'}'><b>${n.n}</b> <small>♛${n.c}</small><br><small>${n.d}</small><br><button class='mb' style='margin-top:6px' data-a='sk:${n.id}' ${cn?'':'disabled'}>${o?'✓ Owned':ok?'Unlock':'Locked'}</button></div>`;}).join('')+`</div>`);
+ h.push(`</div>`);
+ $('skbody').innerHTML=h.join('');$('legn').textContent=S.leg;
+}
+$('skm').onclick=e=>{const el=e.target.closest('[data-a]');if(!el){if(e.target.id==='skm')$('skm').classList.remove('show');return;}
+ const [a,v]=el.dataset.a.split(':');
+ if(a==='close'){$('skm').classList.remove('show');return;}
+ if(a==='sk'){const n=SKT.find(x=>x.id===v);if(n&&!sk(v)&&(!n.r||sk(n.r))&&S.leg>=n.c){S.leg-=n.c;S.sk[v]=1;toast('Skill unlocked: '+n.n,'#ffd24d');}}
+ if(a==='rebirth'){const gain=Math.floor(Math.sqrt(S.dmTot/10));if(gain<1)return;
+  ask('Rebirth? Everything resets except skills. You gain '+gain+' Legacy.',()=>{S=Object.assign(fresh(),{leg:S.leg+gain,legT:S.legT+gain,sk:S.sk,rb:S.rb+1,cfg:S.cfg});streak=0;toast('Reborn! +'+gain+' Legacy','#ffd24d');update();uw();skRender();save();});return;}
+ skRender();update();};
+$('skBtn').onclick=()=>{skRender();$('skm').classList.add('show');};
+const RAR=[{n:'Common',c:'#9aa5b8',w:60,lo:5,hi:25,m:1},{n:'Uncommon',c:'#5dffa0',w:25,lo:20,hi:40,m:1.5},{n:'Rare',c:'#6ee7ff',w:10,lo:35,hi:60,m:2.2},{n:'Epic',c:'#c77dff',w:4,lo:55,hi:80,m:3.5},{n:'Legendary',c:'#ffcc33',w:1,lo:75,hi:100,m:6}];
+const ROL=['Accountant','Marketer','Engineer','Lawyer','Manager'];
+const TRT2=['Hardworking','Hardworking','Slacker','Slacker','Average','Average','Average','Genius'],TM={Hardworking:1.2,Slacker:.7,Genius:1.5,Average:1};
+const IT={desk:{e:'🖥️',c:5000,n:'Desk'},plant:{e:'🪴',c:800,n:'Plant'},coffee:{e:'☕',c:2500,n:'Coffee'},server:{e:'🗄️',c:12000,n:'Server'}};
+const AB={plant:.1,coffee:.15,server:.25,art:.12,lounge:.2,shred:.3,charity:.05};
+let ctab='a',ctool='desk';
+const cnt2=t=>S.co.grid.filter(x=>x===t).length;
+const itCost=t=>Math.ceil(IT[t].c*Math.pow(1.12,cnt2(t)));
+const cbase=m=>m.sk*RAR[m.r].m*.3;
+const outp=m=>cbase(m)*(TM[m.t]||1)*mults().ore;
+const hireCost=a=>Math.ceil(a.sk*RAR[a.r].m*40*(1+0.3*S.co.staff.length)*(moral()>0?.85:moral()<0?1.15:1));
+function adj(i){let b=0;const x=i%6,y=Math.floor(i/6);[[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{const nx=x+dx,ny=y+dy;if(nx<0||nx>5||ny<0||ny>3)return;b+=AB[S.co.grid[ny*6+nx]]||0;});return Math.min(1,b);}
+function coCalc(){const desks=[];S.co.grid.forEach((t,i)=>{if(t==='desk')desks.push({i,a:adj(i)});});
+ desks.sort((a,b)=>b.a-a.a);const st=S.co.staff.slice().sort((a,b)=>outp(b)-outp(a));
+ let gross=0;const at={};desks.forEach((d,k)=>{const m=st[k];if(m){const o=outp(m)*(1+d.a);gross+=o;at[d.i]={m,o};}});
+ const wage=S.co.staff.reduce((s,m)=>s+cbase(m)*.35*mults().ore,0);
+ return {gross,wage,net:gross-wage,at,desks:desks.length};}
+function charURL(seed,r){const c=document.createElement('canvas');c.width=c.height=32;const x=c.getContext('2d');let s=seed;const rd=()=>(s=(s*1664525+1013904223)>>>0)/4294967296;
+ const skin=['#f0b890','#d89a6a','#a8704a','#f7d2b0'][Math.floor(rd()*4)],hair=['#2b2f3d','#7a4a22','#d9a441','#c0392b','#e8e8e8'][Math.floor(rd()*5)];
+ x.fillStyle=hair;x.fillRect(8,4,16,8);x.fillStyle=skin;x.fillRect(8,12,16,8);x.fillRect(4,22,4,6);x.fillRect(24,22,4,6);
+ x.fillStyle=RAR[r].c;x.fillRect(8,20,16,12);x.fillStyle='#1a1020';x.fillRect(11,14,3,3);x.fillRect(18,14,3,3);
+ if(r===4){x.fillStyle='#ffcc33';x.fillRect(8,0,16,4);}
+ if(r>=3){x.fillStyle='#fff';x.fillRect(14,20,4,4);}
+ return c.toDataURL();}
+const cim=m=>`<img src='${charURL(m.seed,m.r)}' width='32' height='32' style='image-rendering:pixelated;border-radius:6px;border:2px solid ${RAR[m.r].c};background:#0d2a1c;vertical-align:middle'>`;
+function spawnApp(min){let r=0,acc=0;const roll=Math.random()*100;
+ for(let i=0;i<5;i++){acc+=RAR[i].w;if(roll<acc){r=i;break;}}
+ if(min!=null&&r<min)r=min;
+ const R=RAR[r],a={id:S.co.nid++,n:pick(FN)+' '+pick(LN),role:pick(ROL),r,sk:Math.floor(R.lo+Math.random()*(R.hi-R.lo)),t:pick(TRT2),seen:false,seed:Math.floor(Math.random()*1e9)};
+ S.co.apps.push(a);
+ if(r>=2)toast(R.n+' applicant: '+a.n+' ('+a.role+')',R.c);
+ if($('co').classList.contains('show'))coRender();}
+function coWork(dt){S.mor=cl(S.mor+(cnt2('charity')-cnt2('shred'))*.02*dt);const c=coCalc(),n=c.net*dt;S.ore+=n;if(n>0){S.runOre+=n;S.totalOre+=n;}if(S.ore<0)S.ore=0;
+ if(dt<2){S.co.t+=dt;if(S.co.t>=(moral()>0?15:moral()<0?28:20)){S.co.t=0;if(S.co.apps.length<6)spawnApp();}}}
+function coRender(){
+ const C=S.co,k=coCalc(),h=[];
+ h.push(`<div class='lbl'><span>Cash $${fmt(S.ore)}</span><span>Net <b class='${k.net>=0?'pos':'neg'}'>$${fmt(Math.abs(k.net))}/s</b> (gross $${fmt(k.gross)}, wages $${fmt(k.wage)})</span></div>`);
+ if(ctab==='a'){
+  h.push(`<div class='btns' style='margin:8px 0'><button class='mb' data-a='hh' ${S.ore<25000||C.apps.length>=6?'disabled':''}>Headhunter $25K (Rare or better)</button></div><p class='hint' style='margin:0 0 10px'>New applications arrive about every 20s (max 6). Interview to reveal a hidden trait before you hire.</p>`);
+  if(!C.apps.length)h.push(`<p class='hint'>No applications right now. Check back soon.</p>`);
+  C.apps.forEach(a=>{const hc=hireCost(a),ic=Math.ceil(a.sk*5);h.push(`<div class='row' style='border-left:4px solid ${RAR[a.r].c}'><div>${cim(a)} <b>${a.n}</b> <small>${a.role}</small><br><small style='color:${RAR[a.r].c}'>${RAR[a.r].n}</small> <small>· Skill ${a.sk} · Trait ${a.seen?a.t:'???'}</small></div><div class='btns'>${a.seen?'':`<button class='mb' data-a='int:${a.id}' ${S.ore<ic?'disabled':''}>Interview $${fmt(ic)}</button>`}<button class='mb' data-a='hire:${a.id}' ${S.ore<hc?'disabled':''}>Hire $${fmt(hc)}</button><button class='mb' data-a='rej:${a.id}'>Reject</button></div></div>`);});
+ }else if(ctab==='s'){
+  h.push(`<p class='hint' style='margin:8px 0 10px'>Staff: ${C.staff.length} · Desks: ${k.desks} · Working: ${Math.min(C.staff.length,k.desks)}. Idle staff still draw wages, so build desks.</p>`);
+  if(!C.staff.length)h.push(`<p class='hint'>No staff yet. Hire from the Applications tab.</p>`);
+  const wk=new Set(Object.values(k.at).map(x=>x.m.id));
+  C.staff.forEach(m=>h.push(`<div class='row' style='border-left:4px solid ${RAR[m.r].c}'><div>${cim(m)} <b>${m.n}</b> <small>${m.role}</small><br><small style='color:${RAR[m.r].c}'>${RAR[m.r].n}</small> <small>· Skill ${m.sk} · ${m.t} · base $${fmt(outp(m))}/s · ${wk.has(m.id)?'at a desk':'NO DESK'}</small></div><div class='btns'><button class='mb' data-a='fire:${m.id}'>Fire</button></div></div>`));
+ }else{
+  h.push(`<p class='hint' style='margin:8px 0'>Desks: ${k.desks} · Working: ${Math.min(C.staff.length,k.desks)}/${C.staff.length}. Each neighbor (up, down, left, right) boosts a desk: plant +10%, coffee +15%, server +25% (max +100%). Your best staff get the best desks.</p><div class='btns'>`+Object.keys(IT).map(t=>`<button class='mb ${ctool===t?'on':''}' data-a='tool:${t}'>${IT[t].e} ${IT[t].n} $${fmt(itCost(t))}</button>`).join('')+`<button class='mb ${ctool==='x'?'on':''}' data-a='tool:x'>🧹 Demolish</button></div>`);
+  h.push(`<div class='og'>`+C.grid.map((t,i)=>{const w=k.at[i];return `<div class='tile' data-a='tile:${i}' title='${t?IT[t].n:'Empty'}'>${t==='desk'&&w?cim(w.m):t?IT[t].e:`<small style='opacity:.3'>+</small>`}${t==='desk'?`<small class='ab'>+${Math.round(adj(i)*100)}%</small>`:''}</div>`;}).join('')+`</div>`);
+ }
+ $('cobody').innerHTML=h.join('');
+}
+$('co').onclick=e=>{const el=e.target.closest('[data-a]');if(!el){if(e.target.id==='co')$('co').classList.remove('show');return;}
+ const [a,v]=el.dataset.a.split(':'),C=S.co;
+ if(a==='close'){$('co').classList.remove('show');return;}
+ if(a==='tab')ctab=v;
+ else if(a==='hire'){const ap=C.apps.find(x=>x.id===+v);if(ap&&S.ore>=hireCost(ap)){S.ore-=hireCost(ap);C.apps=C.apps.filter(x=>x!==ap);ap.seen=true;C.staff.push(ap);toast(ap.n+' joined the company!',RAR[ap.r].c);}}
+ else if(a==='rej')C.apps=C.apps.filter(x=>x.id!==+v);
+ else if(a==='int'){const ap=C.apps.find(x=>x.id===+v),c=ap?Math.ceil(ap.sk*5):0;if(ap&&!ap.seen&&S.ore>=c){S.ore-=c;ap.seen=true;}}
+ else if(a==='fire'){C.staff=C.staff.filter(x=>x.id!==+v);S.mor=cl(S.mor-1);}
+ else if(a==='hh'){if(S.ore>=25000&&C.apps.length<6){S.ore-=25000;spawnApp(2);}}
+ else if(a==='tool')ctool=v;
+ else if(a==='tile'){const i=+v,t=C.grid[i];
+  if(ctool==='x'){if(t){S.ore+=Math.floor(IT[t].c*.5);C.grid[i]=null;}}
+  else if(!t&&ctool&&S.ore>=itCost(ctool)){S.ore-=itCost(ctool);C.grid[i]=ctool;}}
+ coRender();update();};
+$('coBtn').onclick=()=>{coRender();$('co').classList.add('show');};
+const cl=v=>Math.max(-100,Math.min(100,v));
+const moral=()=>S.mor>=25?1:S.mor<=-25?-1:0;
+const tier=()=>S.mor>=60?'Saint':S.mor>=25?'Honest':S.mor>-25?'Neutral':S.mor>-60?'Shady':'Villain';
+Object.assign(IT,{art:{e:'🖼️',c:3500,n:'Art'},lounge:{e:'🛋️',c:6000,n:'Lounge'},shred:{e:'🔥',c:4000,n:'Shredder'},charity:{e:'💝',c:4000,n:'Charity Box'}});
+const ACC=['#ffcc33','#5dffa0','#ff6bd6','#6ee7ff','#ff8a3d'],FELT=[['#0f3a24','#124529','Green'],['#1d2a52','#233266','Blue'],['#4a1626','#5a1b2e','Burgundy'],['#262626','#303030','Charcoal']],FLOORS=[['#0d3a22','Dark'],['#4a3320','Wood'],['#2b3340','Marble'],['#3a2147','Carpet']],COINS=['Gold','Emerald','Ruby','Obsidian'],LOGOS=['🪙','🎰','🎲','🃏','👑'];
+function applyCfg(){const c=S.cfg,r=document.documentElement.style;r.setProperty('--ore',c.accent);r.setProperty('--tile',FLOORS[c.floor][0]);
+ const m=$('mine');m.classList.remove('c1','c2','c3');if(c.coin)m.classList.add('c'+c.coin);
+ document.querySelector('h1').textContent=c.logo+' '+c.name;}
+function pfRender(){
+ const c=S.cfg,btn=(k,v,t,on)=>`<button class='mb ${on?'on':''}' data-a='cfg:${k}:${v}'>${t}</button>`;
+ $('pfbody').innerHTML=`<div class='don'><b>Morality: ${tier()} (${Math.round(S.mor)})</b><div class='bar' style='margin:8px 0'><i style='width:${(S.mor+100)/2}%'></i></div><small>Good (25+): hires cost 15% less, applicants arrive faster, heat cools faster. Evil (-25 or less): job payouts +25% and block income +25%, but hires cost 15% more and applicants arrive slower. Crime, shark loans, hot goods and firing staff push you toward evil. Donations and Charity Boxes pull you back. Shredders drain morality.</small></div>`
+ +`<div class='btns' style='margin-bottom:14px'><button class='mb' data-a='don:5'>Donate 5% cash (+2)</button><button class='mb' data-a='don:25'>Donate 25% cash (+8)</button><button class='mb' data-a='bribe'>Bribe officials, 10% cash (heat -30, morality -3)</button></div><h2 style='margin:0 0 8px'>Style</h2>`
+ +`<div class='lbl'><span>Company name</span></div><input id='pf_name' maxlength='18' value='${c.name.replace(/'/g,'')}' style='background:var(--well);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin-bottom:8px'>`
+ +`<div class='lbl'><span>Logo</span></div><div class='btns'>${LOGOS.map(l=>btn('logo',l,l,c.logo===l)).join('')}</div>`
+ +`<div class='lbl'><span>Accent color</span></div><div class='btns'>${ACC.map(a=>`<button class='mb ${c.accent===a?'on':''}' data-a='cfg:accent:${a}' style='background:${a};color:#000'>&nbsp;&nbsp;&nbsp;</button>`).join('')}</div>`
+ +`<div class='lbl'><span>Coin skin</span></div><div class='btns'>${COINS.map((n,i)=>btn('coin',i,n,c.coin===i)).join('')}</div>`
+ +`<div class='lbl'><span>Casino felt</span></div><div class='btns'>${FELT.map((f,i)=>btn('felt',i,f[2],c.felt===i)).join('')}</div>`
+ +`<div class='lbl'><span>Office floor</span></div><div class='btns'>${FLOORS.map((f,i)=>btn('floor',i,f[1],c.floor===i)).join('')}</div>`;
+ $('pf_name').oninput=e=>{S.cfg.name=e.target.value.slice(0,18);applyCfg();};
+}
+$('pf').onclick=e=>{const el=e.target.closest('[data-a]');if(!el){if(e.target.id==='pf')$('pf').classList.remove('show');return;}
+ const [a,k,v]=el.dataset.a.split(':');
+ if(a==='close'){$('pf').classList.remove('show');return;}
+ if(a==='cfg'){S.cfg[k]=(k==='accent'||k==='logo')?v:+v;applyCfg();}
+ else if(a==='don'){const c=S.ore*(+k/100);if(c>=1){S.ore-=c;S.mor=cl(S.mor+(+k===5?2:8));toast('Donation made. Your conscience feels lighter.','#5dffa0');}}
+ else if(a==='bribe'){const c=S.ore*.1;if(c>=1&&S.heat>0){S.ore-=c;S.heat=Math.max(0,S.heat-30);S.mor=cl(S.mor-3);toast('Officials looked the other way.','#ff7a7a');}}
+ pfRender();update();};
+$('pfBtn').onclick=()=>{pfRender();$('pf').classList.add('show');};
+function tick(dt){
+  const r=rates(),bots=lv(S.du,'bots');
+  let gain=r.ore*dt;
+  if(bots)gain+=bots*clickPow()*headsP()*dt;
+  S.ore+=gain;S.runOre+=gain;S.totalOre+=gain;
+  S.cry+=r.cry*dt;S.pla+=r.pla*dt;world(dt);coWork(dt);
+}
+function save(){S.last=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function load(){
+  try{
+    const raw=localStorage.getItem(KEY);if(!raw)return;
+    S=Object.assign(fresh(),JSON.parse(raw));
+    const away=Math.min((Date.now()-S.last)/1000,OFFLINE_CAP*(sk('e2')?2:1));
+    if(away>10){
+      const before=S.ore;tick(away);
+      toast(`Welcome back! Away ${Math.floor(away/60)}m — your crew won $${fmt(S.ore-before)}.`,'#6ee7ff');
+    }
+  }catch(e){console.warn('load failed',e);}
+}
+$('save').onclick=()=>{save();toast('Game saved.');};
+$('reset').onclick=()=>ask('Erase ALL progress including Lucky Stars?',()=>{
+  try{localStorage.removeItem(KEY);}catch(e){}
+  S=fresh();streak=0;update();toast('Progress erased.','#ff7a7a');
+});
+window.addEventListener('beforeunload',save);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
+
+const cv=$('scene'),cx=cv.getContext('2d'),coins=[],LANE=32;
+function frame(t){
+  cx.clearRect(0,0,640,192);
+  UPS.forEach((u,i)=>{
+    const y=i*LANE,n=lv(S.u,u.id),shown=Math.min(n,12);
+    cx.fillStyle=FELT[S.cfg.felt||0][i%2];cx.fillRect(0,y,640,LANE);
+    cx.fillStyle='#7a5a2a';cx.fillRect(0,y+LANE-3,640,3);
+    for(let k=0;k<shown;k++){
+      const person=u.id==='helper'||u.id==='dealer'||u.id==='boss';
+      const bob=person?Math.round(Math.abs(Math.sin(t/260+k*1.7))*2):0;
+      const x=10+k*36,yy=y+LANE-27-bob;
+      drawSpr(cx,u.id,x,yy,3);
+      if(pop[u.id]&&k===shown-1&&t-pop[u.id]<450){cx.globalAlpha=1-(t-pop[u.id])/450;cx.fillStyle='#fff';cx.fillRect(x-3,yy-3,30,30);cx.globalAlpha=1;}
+    }
+    if(n&&Math.random()<0.02+shown*0.006&&coins.length<150)coins.push({x:10+Math.floor(Math.random()*shown)*36+12,y:y+LANE-8,p:0,h:Math.random()<0.6});
+    cx.fillStyle=n?'#88a592':'#3a5444';cx.font='bold 11px monospace';cx.textAlign='right';
+    cx.fillText(n?u.name+'  \u00d7'+n:u.name+' \u2014 not owned',634,y+16);
+  });
+  for(let i=coins.length-1;i>=0;i--){
+    const c=coins[i];c.p+=0.025;if(c.p>=1){coins.splice(i,1);continue;}
+    const yy=c.y-Math.sin(Math.PI*c.p)*24,w=Math.abs(Math.cos(c.p*14))*5+1;
+    cx.fillStyle=c.h?'#ffcc33':'#cfd6e4';cx.fillRect(c.x-w/2,yy,w,5);
+  }
+  requestAnimationFrame(frame);
+}
+buildWorld();build(UPS,'ups','u');build(CU,'cu','cu');build(PU,'pu','pu');build(DMU,'dmshop','du');
+load();applyCfg();update();requestAnimationFrame(frame);
+let lastT=performance.now(),saveT=0;
+setInterval(()=>{
+  const n=performance.now(),dt=Math.min((n-lastT)/1000,1);lastT=n;
+  tick(dt);update();uw();saveT+=dt;
+  if(saveT>=5){saveT=0;save();}
+},100);
+</script>
+</body>
+</html>
